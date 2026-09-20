@@ -1,10 +1,14 @@
 "use client";
 
-import { IoRestaurant, IoInformationCircle, IoCall } from "react-icons/io5";
+import Link from "next/link";
+import { IoRestaurant, IoInformationCircle, IoCall, IoCart } from "react-icons/io5";
 import { MdOutlineTableRestaurant } from "react-icons/md";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useCart } from "@/context/CartContext";
 
 const Navbar = () => {
+  const { itemCount } = useCart();
+
   return (
     <>
       <motion.nav
@@ -14,18 +18,35 @@ const Navbar = () => {
         className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
       >
         <div className="flex items-center justify-between px-12 py-5 md:px-6 max-md:px-4 max-w-[90rem] mx-auto w-full">
-          <a href="/" className="flex items-center gap-2.5 no-underline">
+          <Link href="/" className="flex items-center gap-2.5 no-underline">
             <div className="text-xl max-md:text-[1.1rem] font-bold tracking-tight text-white uppercase">
               Cashless<span className="text-accent">Dine</span>
             </div>
-          </a>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="flex items-center gap-12 font-semibold text-[0.95rem] tracking-wide text-white/90 max-md:hidden">
-            <a href="/menu" className="nav-link">Menu</a>
+            <Link href="/menu" className="nav-link">Menu</Link>
             <a href="#about" className="nav-link">About</a>
-            <a href="/booking" className="nav-link">Reservation</a>
+            <Link href="/booking" className="nav-link">Reservation</Link>
             <a href="#contact" className="nav-link">Contact</a>
+            <Link href="/cart" className="relative nav-link flex items-center gap-1.5">
+              <IoCart className="text-lg" />
+              Cart
+              <AnimatePresence>
+                {itemCount > 0 && (
+                  <motion.span
+                    key="cart-badge-desktop"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    className="absolute -top-2.5 -right-4 min-w-[18px] h-[18px] flex items-center justify-center bg-accent text-white text-[10px] font-bold rounded-full px-1 shadow-[0_0_10px_rgba(232,75,43,0.5)]"
+                  >
+                    {itemCount > 99 ? "99+" : itemCount}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </Link>
           </div>
         </div>
       </motion.nav>
@@ -37,23 +58,35 @@ const Navbar = () => {
         transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
         className="fixed bottom-0 left-0 right-0 z-50 hidden max-md:flex justify-around items-center bg-[#000000]/60 backdrop-blur-xl pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 "
       >
-        <a
-          href="/menu" className="mobile-nav-item">
+        <Link href="/menu" className="mobile-nav-item">
           <IoRestaurant />
           <span>Menu</span>
-        </a>
+        </Link>
         <a href="#about" className="mobile-nav-item">
           <IoInformationCircle />
           <span>About</span>
         </a>
-        <a href="/booking" className="mobile-nav-item">
+        <Link href="/booking" className="mobile-nav-item">
           <MdOutlineTableRestaurant />
           <span>Reserve</span>
-        </a>
-        <a href="#contact" className="mobile-nav-item">
-          <IoCall />
-          <span>Contact</span>
-        </a>
+        </Link>
+        <Link href="/cart" className="mobile-nav-item relative">
+          <IoCart />
+          <span>Cart</span>
+          <AnimatePresence>
+            {itemCount > 0 && (
+              <motion.span
+                key="cart-badge-mobile"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+                className="absolute -top-1 right-0 min-w-[16px] h-[16px] flex items-center justify-center bg-accent text-white text-[9px] font-bold rounded-full px-0.5 shadow-[0_0_10px_rgba(232,75,43,0.5)]"
+              >
+                {itemCount > 99 ? "99+" : itemCount}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </Link>
       </motion.nav>
     </>
   );

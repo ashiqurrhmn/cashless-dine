@@ -2,6 +2,7 @@ import { menuItems } from "@/data/menu";
 import Image from "next/image";
 import Link from "next/link";
 import { IoArrowBack } from "react-icons/io5";
+import AddToCartButton from "@/components/AddToCartButton";
 
 export default async function FoodDetail({ params }) {
   const { id } = await params;
@@ -72,14 +73,7 @@ export default async function FoodDetail({ params }) {
           </p>
 
           {/* Action Buttons */}
-          <div className="flex gap-4 max-md:flex-col mt-4">
-            <button className="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/20 px-8 py-4 rounded-full font-bold uppercase tracking-wider text-sm transition-all duration-300">
-              Add to Cart
-            </button>
-            <button className="flex-1 bg-accent hover:bg-[#ff6347] text-white px-8 py-4 rounded-full font-bold uppercase tracking-wider text-sm transition-all duration-300 shadow-[0_4px_20px_rgba(232,75,43,0.4)] hover:shadow-[0_6px_25px_rgba(232,75,43,0.6)]">
-              Buy Now
-            </button>
-          </div>
+          <AddToCartButton food={food} />
         </div>
       </div>
     </main>
