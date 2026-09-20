@@ -24,7 +24,7 @@ const Navbar = () => {
           <div className="flex items-center gap-12 font-semibold text-[0.95rem] tracking-wide text-white/90 max-md:hidden">
             <a href="/menu" className="nav-link">Menu</a>
             <a href="#about" className="nav-link">About</a>
-            <a href="#reservation" className="nav-link">Reservation</a>
+            <a href="/booking" className="nav-link">Reservation</a>
             <a href="#contact" className="nav-link">Contact</a>
           </div>
         </div>
@@ -46,7 +46,7 @@ const Navbar = () => {
           <IoInformationCircle />
           <span>About</span>
         </a>
-        <a href="#reservation" className="mobile-nav-item">
+        <a href="/booking" className="mobile-nav-item">
           <MdOutlineTableRestaurant />
           <span>Reserve</span>
         </a>

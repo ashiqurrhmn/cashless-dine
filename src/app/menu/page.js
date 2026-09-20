@@ -1,13 +1,21 @@
 "use client";
 
+import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import FoodCard from "@/components/FoodCard";
-import { menuItems } from "@/data/menu";
+import CategoryFilter from "@/components/CategoryFilter";
+import { menuItems, categories } from "@/data/menu";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { IoArrowBack } from "react-icons/io5";
 
 export default function MenuPage() {
+  const [activeCategory, setActiveCategory] = useState("All");
+
+  const filteredItems = menuItems.filter(
+    (item) => activeCategory === "All" || item.category === activeCategory
+  );
+
   return (
     <main className="min-h-screen bg-black pb-24 selection:bg-accent selection:text-white">
       {/* We can hide the default Navbar on this specific elegant page, or keep it. 
@@ -42,15 +50,34 @@ export default function MenuPage() {
           </motion.div>
         </div>
 
+        {/* Category Filter */}
+        <div className="mb-16">
+          <CategoryFilter 
+            categories={categories} 
+            activeCategory={activeCategory} 
+            onSelectCategory={setActiveCategory} 
+          />
+        </div>
 
         {/* Food Grid - Masonry style using CSS columns */}
         <div className="columns-1 md:columns-2 gap-x-12 max-md:gap-x-6">
           <AnimatePresence mode="popLayout">
-            {menuItems.map((item, index) => (
+            {filteredItems.map((item, index) => (
               <FoodCard key={item.id} food={item} index={index} />
             ))}
             
-            
+            {filteredItems.length === 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="col-span-full py-20 text-center break-inside-avoid w-full inline-block"
+              >
+                <div className="text-4xl mb-4">🍽️</div>
+                <h3 className="text-xl text-white font-bold mb-2">No items found</h3>
+                <p className="text-white/60 text-sm">We couldn't find any dishes in this category.</p>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
       </section>

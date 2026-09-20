@@ -19,13 +19,26 @@ export const metadata = {
     "Experience exquisite cuisine crafted by world-class chefs. Pay seamlessly with CashlessDine - no cash, no hassle, just pure culinary bliss.",
 };
 
+import { Toaster } from "react-hot-toast";
+
 export default function RootLayout({ children }) {
   return (
     <html
       lang="en"
       className={`${playfair.variable} ${libreBaskerville.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
-    </html>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        <Toaster 
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: '#333',
+              color: '#fff',
+            },
+          }}
+        />
+        {children}
+      </body>
+    </html> 
   );
 }

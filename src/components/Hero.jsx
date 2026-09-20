@@ -87,7 +87,7 @@ const Hero = () => {
               <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
             </a>
             <a
-              href="#reservation"
+              href="/booking"
               className="inline-flex items-center justify-center gap-2 bg-[#222] text-white px-7 py-3 max-md:py-2.5 max-md:px-2 max-md:text-[0.8rem] rounded-lg text-sm font-semibold transition-all duration-300 hover:bg-[#333] max-sm:flex-1"
             >
               Reserve Now

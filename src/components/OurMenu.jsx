@@ -46,7 +46,7 @@ const OurMenu = () => {
             </div>
             <div>
               <a
-                href="#reservation"
+                href="/booking"
                 className="inline-block bg-accent text-white font-semibold text-sm max-md:text-xs px-7 py-3.5 max-md:px-5 max-md:py-2.5 rounded-full transition-all duration-300 no-underline hover:bg-accent-hover hover:shadow-[0_4px_20px_rgba(232,75,43,0.4)]"
               >
                 Book a Table
