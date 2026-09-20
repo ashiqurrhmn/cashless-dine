@@ -2,6 +2,7 @@ import { Playfair_Display, Libre_Baskerville } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import Providers from "@/components/Providers";
 import Footer from "@/components/Footer";
+import SmoothScrolling from "@/components/SmoothScrolling";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -29,19 +30,21 @@ export default function RootLayout({ children }) {
       className={`${playfair.variable} ${libreBaskerville.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        <Providers>
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              style: {
-                background: '#333',
-                color: '#fff',
-              },
-            }}
-          />
-          {children}
-          <Footer />
-        </Providers>
+        <SmoothScrolling>
+          <Providers>
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                style: {
+                  background: '#333',
+                  color: '#fff',
+                },
+              }}
+            />
+            {children}
+            <Footer />
+          </Providers>
+        </SmoothScrolling>
       </body>
     </html>
   );
