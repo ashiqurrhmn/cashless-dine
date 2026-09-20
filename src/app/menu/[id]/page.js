@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { IoArrowBack } from "react-icons/io5";
 import AddToCartButton from "@/components/AddToCartButton";
+import FavoriteButton from "@/components/FavoriteButton";
 
 export default async function FoodDetail({ params }) {
   const { id } = await params;
@@ -60,9 +61,15 @@ export default async function FoodDetail({ params }) {
             </p>
           </div>
           
-          <h1 className="font-heading text-6xl max-xl:text-5xl max-md:text-4xl font-extrabold text-white mb-6 leading-[1.1]">
-            {food.name}
-          </h1>
+          
+          <div className="flex items-start justify-between gap-6 mb-6">
+            <h1 className="font-heading text-6xl max-xl:text-5xl max-md:text-4xl font-extrabold text-white leading-[1.1]">
+              {food.name}
+            </h1>
+            <div className="pt-2">
+              <FavoriteButton foodId={food.id} className="w-12 h-12 border-2" />
+            </div>
+          </div>
           
           <div className="text-5xl max-md:text-4xl font-light text-white mb-10 tracking-tight">
             ${food.price.toFixed(2)}

@@ -10,6 +10,7 @@ const CART_STORAGE_KEY = "cashlessdine-cart";
 const ORDER_STORAGE_KEY = "cashlessdine-last-order";
 const ALL_ORDERS_KEY = "cashlessdine-all-orders";
 const RESERVATIONS_KEY = "cashlessdine-reservations";
+const FAVORITES_KEY = "cashlessdine-favorites";
 
 function loadFromStorage(key) {
   if (typeof window === "undefined") return null;
@@ -35,6 +36,7 @@ export function CartProvider({ children }) {
   const [lastOrder, setLastOrderState] = useState(null);
   const [allOrders, setAllOrdersState] = useState([]);
   const [reservations, setReservationsState] = useState([]);
+  const [favorites, setFavorites] = useState([]);
   const [hydrated, setHydrated] = useState(false);
 
   // Hydrate from localStorage on mount (with seed fallback)
@@ -50,6 +52,9 @@ export function CartProvider({ children }) {
 
     const savedReservations = loadFromStorage(RESERVATIONS_KEY);
     setReservationsState(savedReservations && Array.isArray(savedReservations) ? savedReservations : seedReservations);
+
+    const savedFavorites = loadFromStorage(FAVORITES_KEY);
+    if (savedFavorites && Array.isArray(savedFavorites)) setFavorites(savedFavorites);
 
     setHydrated(true);
   }, []);
@@ -70,6 +75,10 @@ export function CartProvider({ children }) {
   useEffect(() => {
     if (hydrated) saveToStorage(RESERVATIONS_KEY, reservations);
   }, [reservations, hydrated]);
+
+  useEffect(() => {
+    if (hydrated) saveToStorage(FAVORITES_KEY, favorites);
+  }, [favorites, hydrated]);
 
   // ── Cart actions ──
 
@@ -131,6 +140,14 @@ export function CartProvider({ children }) {
     setReservationsState((prev) => [reservation, ...prev]);
   }, []);
 
+  // ── Favorites actions ──
+
+  const toggleFavorite = useCallback((foodId) => {
+    setFavorites((prev) => 
+      prev.includes(foodId) ? prev.filter(id => id !== foodId) : [...prev, foodId]
+    );
+  }, []);
+
   // ── Computed ──
 
   const itemCount = useMemo(
@@ -158,9 +175,11 @@ export function CartProvider({ children }) {
       addOrder,
       reservations,
       addReservation,
+      favorites,
+      toggleFavorite,
       MAX_ITEM_QTY,
     }),
-    [items, itemCount, subtotal, addItem, removeItem, updateQuantity, clearCart, lastOrder, setLastOrder, allOrders, addOrder, reservations, addReservation]
+    [items, itemCount, subtotal, addItem, removeItem, updateQuantity, clearCart, lastOrder, setLastOrder, allOrders, addOrder, reservations, addReservation, favorites, toggleFavorite]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

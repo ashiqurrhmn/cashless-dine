@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import FavoriteButton from "./FavoriteButton";
 
 const FoodCard = ({ food, index }) => {
   // Using 1-based index for the badge number
@@ -50,6 +51,9 @@ const FoodCard = ({ food, index }) => {
             sizes="(max-width: 768px) 100vw, 50vw"
             className="object-cover transition-transform duration-1000 group-hover:scale-105"
           />
+          <div className="absolute top-4 right-4 z-20">
+            <FavoriteButton foodId={food.id} />
+          </div>
         </Link>
       </div>
     </motion.div>

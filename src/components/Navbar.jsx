@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { IoRestaurant, IoInformationCircle, IoCall, IoCart, IoPersonOutline } from "react-icons/io5";
+import { IoRestaurant, IoInformationCircle, IoCall, IoCart, IoPersonOutline, IoHeartOutline } from "react-icons/io5";
 import { MdOutlineTableRestaurant } from "react-icons/md";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
 
 const Navbar = () => {
-  const { itemCount } = useCart();
+  const { itemCount, favorites } = useCart();
 
   return (
     <>
@@ -25,31 +25,50 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="flex items-center gap-12 font-semibold text-[0.95rem] tracking-wide text-white/90 max-md:hidden">
+          <div className="flex items-center gap-10 font-semibold text-[0.95rem] tracking-wide text-white/90 max-md:hidden">
             <Link href="/menu" className="nav-link">Menu</Link>
-            <a href="#about" className="nav-link">About</a>
             <Link href="/booking" className="nav-link">Reservation</Link>
             <a href="#contact" className="nav-link">Contact</a>
-            <Link href="/cart" className="relative nav-link flex items-center gap-1.5">
-              <IoCart className="text-lg" />
-              Cart
-              <AnimatePresence>
-                {itemCount > 0 && (
-                  <motion.span
-                    key="cart-badge-desktop"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    exit={{ scale: 0 }}
-                    className="absolute -top-2.5 -right-4 min-w-[18px] h-[18px] flex items-center justify-center bg-accent text-white text-[10px] font-bold rounded-full px-1 shadow-[0_0_10px_rgba(232,75,43,0.5)]"
-                  >
-                    {itemCount > 99 ? "99+" : itemCount}
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </Link>
-            <Link href="/profile" className="nav-link">
-              Profile
-            </Link>
+            
+            <div className="flex items-center gap-6 ml-4 border-l border-white/20 pl-10">
+              <Link href="/favorites" className="relative hover:text-accent transition-colors" aria-label="Favorites">
+                <IoHeartOutline className="text-2xl" />
+                <AnimatePresence>
+                  {favorites.length > 0 && (
+                    <motion.span
+                      key="fav-badge-desktop"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      className="absolute -top-2.5 -right-3 min-w-[18px] h-[18px] flex items-center justify-center bg-accent text-white text-[10px] font-bold rounded-full px-1 shadow-[0_0_10px_rgba(232,75,43,0.5)]"
+                    >
+                      {favorites.length > 99 ? "99+" : favorites.length}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </Link>
+              
+              <Link href="/cart" className="relative hover:text-accent transition-colors" aria-label="Cart">
+                <IoCart className="text-2xl" />
+                <AnimatePresence>
+                  {itemCount > 0 && (
+                    <motion.span
+                      key="cart-badge-desktop"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      className="absolute -top-2.5 -right-3 min-w-[18px] h-[18px] flex items-center justify-center bg-accent text-white text-[10px] font-bold rounded-full px-1 shadow-[0_0_10px_rgba(232,75,43,0.5)]"
+                    >
+                      {itemCount > 99 ? "99+" : itemCount}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </Link>
+              
+              <Link href="/profile" className="relative hover:text-accent transition-colors" aria-label="Profile">
+                <IoPersonOutline className="text-2xl" />
+              </Link>
+            </div>
           </div>
         </div>
       </motion.nav>
@@ -65,10 +84,23 @@ const Navbar = () => {
           <IoRestaurant />
           <span>Menu</span>
         </Link>
-        <a href="#about" className="mobile-nav-item">
-          <IoInformationCircle />
-          <span>About</span>
-        </a>
+        <Link href="/favorites" className="mobile-nav-item relative">
+          <IoHeartOutline />
+          <span>Favorites</span>
+          <AnimatePresence>
+            {favorites.length > 0 && (
+              <motion.span
+                key="fav-badge-mobile"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+                className="absolute -top-1 right-0 min-w-[16px] h-[16px] flex items-center justify-center bg-accent text-white text-[9px] font-bold rounded-full px-0.5 shadow-[0_0_10px_rgba(232,75,43,0.5)]"
+              >
+                {favorites.length > 99 ? "99+" : favorites.length}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </Link>
         <Link href="/booking" className="mobile-nav-item">
           <MdOutlineTableRestaurant />
           <span>Reserve</span>

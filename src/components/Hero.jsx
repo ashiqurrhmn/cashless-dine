@@ -80,10 +80,10 @@ const Hero = () => {
           {/* Action buttons */}
           <motion.div variants={fadeUpVariants} className="flex items-center justify-start max-md:justify-center gap-4 mb-12 max-sm:w-[95%] max-sm:gap-3 max-sm:mb-6">
             <a
-              href="#menu"
+              href="/menu"
               className="inline-flex items-center justify-center gap-2 bg-accent text-white px-7 py-3 max-md:py-2.5 max-md:px-2 max-md:text-[0.8rem] rounded-lg text-sm font-semibold transition-all duration-300 hover:bg-accent-hover hover:shadow-[0_4px_20px_rgba(232,75,43,0.4)] max-sm:flex-1 group"
             >
-              Explore Menu 
+              Explore Menu
               <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
             </a>
             <a
