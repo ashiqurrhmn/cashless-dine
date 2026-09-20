@@ -1,4 +1,27 @@
+"use client";
+
 import Image from "next/image";
+import { motion } from "framer-motion";
+
+const fadeUpVariants = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } 
+  }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+      delayChildren: 0.3
+    }
+  }
+};
 
 const Hero = () => {
   return (
@@ -27,32 +50,35 @@ const Hero = () => {
         />
       </div>
 
-
-
       {/* Hero text & CTA overlaid on image */}
       <div className="absolute inset-0 z-10 flex flex-col justify-center max-md:justify-start max-md:pt-[25%] max-md:pb-10 w-full max-w-[90rem] mx-auto px-12 md:px-6 max-md:px-5">
-        <div className="max-w-2xl max-md:text-center max-md:mx-auto max-md:flex max-md:flex-col max-md:items-center">
+        <motion.div 
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          className="max-w-2xl max-md:text-center max-md:mx-auto max-md:flex max-md:flex-col max-md:items-center"
+        >
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 bg-[#1a1a1a] border border-white/10 px-4 py-1.5 max-md:px-3 max-md:py-1 rounded-full text-[0.65rem] max-md:text-[0.55rem] text-accent font-semibold tracking-widest uppercase w-fit mb-6 max-md:mb-3">
+          <motion.div variants={fadeUpVariants} className="inline-flex items-center gap-2 bg-[#1a1a1a] border border-white/10 px-4 py-1.5 max-md:px-3 max-md:py-1 rounded-full text-[0.65rem] max-md:text-[0.55rem] text-accent font-semibold tracking-widest uppercase w-fit mb-6 max-md:mb-3">
             <span className="w-1.5 h-1.5 max-md:w-1 max-md:h-1 bg-accent rounded-full"></span>
             Cashless Dining Experience
-          </div>
+          </motion.div>
 
           {/* Heading */}
-          <h1 className="font-heading text-5xl max-md:text-[2rem] md:text-7xl font-extrabold text-white mb-6 max-md:mb-3 leading-[1.1] tracking-tight">
+          <motion.h1 variants={fadeUpVariants} className="font-heading text-5xl max-md:text-[2rem] md:text-7xl font-extrabold text-white mb-6 max-md:mb-3 leading-[1.1] tracking-tight">
             Taste the Art of <br />
             Modern <span className="text-accent">Dining</span>
-          </h1>
+          </motion.h1>
 
           {/* Description */}
-          <p className="text-[#888] text-base max-md:text-xs leading-relaxed max-w-md mb-8 max-md:mb-6">
+          <motion.p variants={fadeUpVariants} className="text-[#888] text-base max-md:text-xs leading-relaxed max-w-md mb-8 max-md:mb-6">
             Experience exquisite cuisine crafted by world-class chefs, served in
             an elegant atmosphere. Pay seamlessly — no cash, no hassle, just
             pure culinary bliss.
-          </p>
+          </motion.p>
 
           {/* Action buttons */}
-          <div className="flex items-center justify-start max-md:justify-center gap-4 mb-12 max-sm:w-[95%] max-sm:gap-3 max-sm:mb-6">
+          <motion.div variants={fadeUpVariants} className="flex items-center justify-start max-md:justify-center gap-4 mb-12 max-sm:w-[95%] max-sm:gap-3 max-sm:mb-6">
             <a
               href="#menu"
               className="inline-flex items-center justify-center gap-2 bg-accent text-white px-7 py-3 max-md:py-2.5 max-md:px-2 max-md:text-[0.8rem] rounded-lg text-sm font-semibold transition-all duration-300 hover:bg-accent-hover hover:shadow-[0_4px_20px_rgba(232,75,43,0.4)] max-sm:flex-1 group"
@@ -66,10 +92,10 @@ const Hero = () => {
             >
               Reserve Now
             </a>
-          </div>
+          </motion.div>
 
           {/* Stats */}
-          <div className="flex max-md:hidden items-center gap-12 pt-8 max-md:pt-4 border-t border-white/10 max-md:gap-4 max-md:w-[85%] max-md:justify-between">
+          <motion.div variants={fadeUpVariants} className="flex max-md:hidden items-center gap-12 pt-8 max-md:pt-4 border-t border-white/10 max-md:gap-4 max-md:w-[85%] max-md:justify-between">
             <div className="max-md:text-center">
               <div className="text-2xl max-md:text-lg font-bold text-white mb-1">
                 200<span className="text-accent">+</span>
@@ -88,8 +114,8 @@ const Hero = () => {
               </div>
               <div className="text-[10px] max-md:text-[8px] text-white/50 tracking-widest uppercase">Rating</div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
     </section>
   );
