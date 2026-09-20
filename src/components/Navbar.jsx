@@ -22,7 +22,7 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="flex items-center gap-12 font-semibold text-[0.95rem] tracking-wide text-white/90 max-md:hidden">
-            <a href="#menu" className="nav-link">Menu</a>
+            <a href="/menu" className="nav-link">Menu</a>
             <a href="#about" className="nav-link">About</a>
             <a href="#reservation" className="nav-link">Reservation</a>
             <a href="#contact" className="nav-link">Contact</a>
@@ -38,7 +38,7 @@ const Navbar = () => {
         className="fixed bottom-0 left-0 right-0 z-50 hidden max-md:flex justify-around items-center bg-[#000000]/60 backdrop-blur-xl pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 "
       >
         <a
-          href="#menu" className="mobile-nav-item">
+          href="/menu" className="mobile-nav-item">
           <IoRestaurant />
           <span>Menu</span>
         </a>
