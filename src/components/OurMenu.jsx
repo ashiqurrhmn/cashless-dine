@@ -55,8 +55,8 @@ const OurMenu = () => {
           </motion.div>
 
           {/* Right — Info card with circular image */}
-          <motion.div variants={fadeUpVariant} className="group bg-white rounded-2xl p-10 max-md:p-6 relative overflow-hidden min-h-[320px] max-md:min-h-[240px] flex flex-col justify-between shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100">
-            <div className="absolute top-6 right-6 max-md:top-4 max-md:right-4 w-20 h-20 max-md:w-14 max-md:h-14 rounded-full overflow-hidden border-4 border-[#faf8f5] shadow-lg">
+          <motion.div variants={fadeUpVariant} className="group p-10 max-md:p-6 relative overflow-hidden min-h-[320px] max-md:min-h-[240px] flex flex-col justify-between">
+            <div className="absolute top-6 right-6 max-md:top-4 max-md:right-4 w-20 h-20 max-md:w-14 max-md:h-14 rounded-full overflow-hidden">
               <Image
                 src="/assets/sushi-platter.jpg"
                 alt="Fresh sushi"
@@ -149,7 +149,7 @@ const OurMenu = () => {
           whileInView="visible"
           viewport={{ once: true, margin: "-50px" }}
           variants={fadeUpVariant}
-          className="bg-white rounded-2xl p-10 max-md:p-6 text-center shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100"
+          className="bg-white rounded-2xl p-10 max-md:p-6 text-center"
         >
           <h3 className="font-heading text-2xl max-md:text-xl font-bold text-[#1a1a1a] mb-4 max-md:mb-3">
             Excellence for Your Palate

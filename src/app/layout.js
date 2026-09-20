@@ -1,6 +1,7 @@
 import { Playfair_Display, Libre_Baskerville } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import Providers from "@/components/Providers";
+import Footer from "@/components/Footer";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -39,6 +40,7 @@ export default function RootLayout({ children }) {
             }}
           />
           {children}
+          <Footer />
         </Providers>
       </body>
     </html>
