@@ -28,7 +28,7 @@ const Navbar = () => {
           <div className="flex items-center gap-10 font-semibold text-[0.95rem] tracking-wide text-white/90 max-md:hidden">
             <Link href="/menu" className="nav-link">Menu</Link>
             <Link href="/booking" className="nav-link">Reservation</Link>
-            <a href="#contact" className="nav-link">Contact</a>
+            <Link href="/contact" className="nav-link">Contact</Link>
             
             <div className="flex items-center gap-6 ml-4 border-l border-white/20 pl-10">
               <Link href="/favorites" className="relative hover:text-accent transition-colors" aria-label="Favorites">
