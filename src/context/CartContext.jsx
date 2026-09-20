@@ -1,12 +1,15 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, useMemo, useEffect } from "react";
+import { seedOrders, seedReservations } from "@/data/user";
 
 const CartContext = createContext(null);
 
 const MAX_ITEM_QTY = 20;
 const CART_STORAGE_KEY = "cashlessdine-cart";
 const ORDER_STORAGE_KEY = "cashlessdine-last-order";
+const ALL_ORDERS_KEY = "cashlessdine-all-orders";
+const RESERVATIONS_KEY = "cashlessdine-reservations";
 
 function loadFromStorage(key) {
   if (typeof window === "undefined") return null;
@@ -30,9 +33,11 @@ function saveToStorage(key, value) {
 export function CartProvider({ children }) {
   const [items, setItems] = useState([]);
   const [lastOrder, setLastOrderState] = useState(null);
+  const [allOrders, setAllOrdersState] = useState([]);
+  const [reservations, setReservationsState] = useState([]);
   const [hydrated, setHydrated] = useState(false);
 
-  // Hydrate from localStorage on mount
+  // Hydrate from localStorage on mount (with seed fallback)
   useEffect(() => {
     const savedCart = loadFromStorage(CART_STORAGE_KEY);
     if (savedCart && Array.isArray(savedCart)) setItems(savedCart);
@@ -40,18 +45,33 @@ export function CartProvider({ children }) {
     const savedOrder = loadFromStorage(ORDER_STORAGE_KEY);
     if (savedOrder) setLastOrderState(savedOrder);
 
+    const savedAllOrders = loadFromStorage(ALL_ORDERS_KEY);
+    setAllOrdersState(savedAllOrders && Array.isArray(savedAllOrders) ? savedAllOrders : seedOrders);
+
+    const savedReservations = loadFromStorage(RESERVATIONS_KEY);
+    setReservationsState(savedReservations && Array.isArray(savedReservations) ? savedReservations : seedReservations);
+
     setHydrated(true);
   }, []);
 
-  // Persist cart to localStorage on change
+  // Persist to localStorage on change
   useEffect(() => {
     if (hydrated) saveToStorage(CART_STORAGE_KEY, items);
   }, [items, hydrated]);
 
-  // Persist last order to localStorage on change
   useEffect(() => {
     if (hydrated) saveToStorage(ORDER_STORAGE_KEY, lastOrder);
   }, [lastOrder, hydrated]);
+
+  useEffect(() => {
+    if (hydrated) saveToStorage(ALL_ORDERS_KEY, allOrders);
+  }, [allOrders, hydrated]);
+
+  useEffect(() => {
+    if (hydrated) saveToStorage(RESERVATIONS_KEY, reservations);
+  }, [reservations, hydrated]);
+
+  // ── Cart actions ──
 
   const addItem = useCallback((foodItem) => {
     setItems((prev) => {
@@ -95,9 +115,23 @@ export function CartProvider({ children }) {
     setItems([]);
   }, []);
 
+  // ── Order actions ──
+
   const setLastOrder = useCallback((order) => {
     setLastOrderState(order);
   }, []);
+
+  const addOrder = useCallback((order) => {
+    setAllOrdersState((prev) => [order, ...prev]);
+  }, []);
+
+  // ── Reservation actions ──
+
+  const addReservation = useCallback((reservation) => {
+    setReservationsState((prev) => [reservation, ...prev]);
+  }, []);
+
+  // ── Computed ──
 
   const itemCount = useMemo(
     () => items.reduce((sum, i) => sum + i.quantity, 0),
@@ -120,9 +154,13 @@ export function CartProvider({ children }) {
       clearCart,
       lastOrder,
       setLastOrder,
+      allOrders,
+      addOrder,
+      reservations,
+      addReservation,
       MAX_ITEM_QTY,
     }),
-    [items, itemCount, subtotal, addItem, removeItem, updateQuantity, clearCart, lastOrder, setLastOrder]
+    [items, itemCount, subtotal, addItem, removeItem, updateQuantity, clearCart, lastOrder, setLastOrder, allOrders, addOrder, reservations, addReservation]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

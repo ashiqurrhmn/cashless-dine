@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { IoRestaurant, IoInformationCircle, IoCall, IoCart } from "react-icons/io5";
+import { IoRestaurant, IoInformationCircle, IoCall, IoCart, IoPersonOutline } from "react-icons/io5";
 import { MdOutlineTableRestaurant } from "react-icons/md";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
@@ -47,6 +47,9 @@ const Navbar = () => {
                 )}
               </AnimatePresence>
             </Link>
+            <Link href="/profile" className="nav-link">
+              Profile
+            </Link>
           </div>
         </div>
       </motion.nav>
@@ -86,6 +89,10 @@ const Navbar = () => {
               </motion.span>
             )}
           </AnimatePresence>
+        </Link>
+        <Link href="/profile" className="mobile-nav-item">
+          <IoPersonOutline />
+          <span>Profile</span>
         </Link>
       </motion.nav>
     </>

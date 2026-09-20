@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
+import { useCart } from "@/context/CartContext";
 import {
   TIME_SLOTS,
   MAX_PARTY_SIZE,
@@ -109,6 +110,7 @@ function StepIndicator({ currentStep }) {
 // ─── Main Component ─────────────────────────────────────────
 
 export default function BookingForm() {
+  const { addReservation } = useCart();
   // Form state
   const [date, setDate] = useState("");
   const [partySize, setPartySize] = useState(2);
@@ -180,14 +182,16 @@ export default function BookingForm() {
 
       if (result.available) {
         const id = generateReservationId();
-        setReservation({
+        const newReservation = {
           id,
           date,
           time: selectedTime,
           partySize,
           tableSize: result.tableSize,
           status: "Confirmed",
-        });
+        };
+        setReservation(newReservation);
+        addReservation(newReservation);
         toast.success("Reservation confirmed!");
         setStep(4); // confirmation view
       } else {

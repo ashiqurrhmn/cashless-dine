@@ -19,7 +19,7 @@ let orderCounter = 1000;
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, subtotal, clearCart, setLastOrder } = useCart();
+  const { items, subtotal, clearCart, setLastOrder, addOrder } = useCart();
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Form state
@@ -113,6 +113,7 @@ export default function CheckoutPage() {
       };
 
       setLastOrder(order);
+      addOrder(order);
       clearCart();
       toast.success("Order placed successfully!");
       router.push("/order-confirmation");
