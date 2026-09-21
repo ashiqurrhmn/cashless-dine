@@ -8,8 +8,8 @@ const CartContext = createContext(null);
 const MAX_ITEM_QTY = 20;
 const CART_STORAGE_KEY = "cashlessdine-cart";
 const ORDER_STORAGE_KEY = "cashlessdine-last-order";
-const ALL_ORDERS_KEY = "cashlessdine-all-orders";
-const RESERVATIONS_KEY = "cashlessdine-reservations";
+const ALL_ORDERS_KEY = "cashlessdine-all-orders-v2";
+const RESERVATIONS_KEY = "cashlessdine-reservations-v2";
 const FAVORITES_KEY = "cashlessdine-favorites";
 
 function loadFromStorage(key) {

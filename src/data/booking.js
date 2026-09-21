@@ -4,9 +4,6 @@
  * This module re-exports the pure availability logic from @/lib/booking
  * and keeps the constants / helpers that the BookingForm already imports.
  *
- * Existing imports like:
- *   import { TIME_SLOTS, MAX_PARTY_SIZE, checkAvailability, ... } from "@/data/booking"
- * continue to work unchanged.
  */
 
 export { findAvailableTable, findAlternativeTimes, REASONS } from "@/lib/booking";
