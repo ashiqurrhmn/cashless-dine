@@ -7,14 +7,21 @@ import CategoryFilter from "@/components/CategoryFilter";
 import { menuItems, categories } from "@/data/menu";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { IoArrowBack } from "react-icons/io5";
+import { IoArrowBack, IoSearch, IoFilter } from "react-icons/io5";
 
 export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
-  const filteredItems = menuItems.filter(
-    (item) => activeCategory === "All" || item.category === activeCategory
-  );
+  const filteredItems = menuItems.filter((item) => {
+    const matchesCategory = activeCategory === "All" || item.category === activeCategory;
+    const matchesSearch = 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <main className="min-h-screen bg-black pb-24 selection:bg-accent selection:text-white">
@@ -49,14 +56,46 @@ export default function MenuPage() {
             </div>
           </motion.div>
         </div>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-16 max-md:mb-8">
+          
+          {/* Top Row on Mobile: Search Bar + Filter Toggle */}
+          <div className="flex w-full lg:w-auto lg:order-2 gap-3 items-center">
+            {/* Search Bar */}
+            <div className="relative group w-full lg:max-w-sm">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center pointer-events-none z-10">
+                <IoSearch className="text-white/40 group-focus-within:text-accent transition-colors duration-300 text-lg" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search menu..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-full py-3.5 pl-12 pr-6 text-sm text-white placeholder-white/30 focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/50 focus:bg-white/10 transition-all duration-300 backdrop-blur-sm"
+              />
+            </div>
 
-        {/* Category Filter */}
-        <div className="mb-16">
-          <CategoryFilter 
-            categories={categories} 
-            activeCategory={activeCategory} 
-            onSelectCategory={setActiveCategory} 
-          />
+            {/* Mobile Filter Toggle */}
+            <button
+              onClick={() => setIsMobileFilterOpen(!isMobileFilterOpen)}
+              className={`lg:hidden flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-full border transition-all duration-300 ${
+                isMobileFilterOpen 
+                  ? "bg-accent border-accent text-white" 
+                  : "bg-white/5 border-white/10 text-white/70 hover:text-white"
+              }`}
+            >
+              <IoFilter className="text-xl" />
+            </button>
+          </div>
+
+          {/* Category Filter */}
+          <div className={`w-full lg:w-auto overflow-x-auto no-scrollbar lg:order-1 ${isMobileFilterOpen ? "block" : "hidden lg:block"}`}>
+            <CategoryFilter 
+              categories={categories} 
+              activeCategory={activeCategory} 
+              onSelectCategory={setActiveCategory} 
+            />
+          </div>
+
         </div>
 
         {/* Food Grid - Masonry style using CSS columns */}
