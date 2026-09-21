@@ -36,6 +36,7 @@ export function CartProvider({ children }) {
   const [lastOrder, setLastOrderState] = useState(null);
   const [allOrders, setAllOrdersState] = useState([]);
   const [reservations, setReservationsState] = useState([]);
+  const [sessionReservations, setSessionReservations] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [hydrated, setHydrated] = useState(false);
 
@@ -51,7 +52,20 @@ export function CartProvider({ children }) {
     setAllOrdersState(savedAllOrders && Array.isArray(savedAllOrders) ? savedAllOrders : seedOrders);
 
     const savedReservations = loadFromStorage(RESERVATIONS_KEY);
-    setReservationsState(savedReservations && Array.isArray(savedReservations) ? savedReservations : seedReservations);
+    const rawReservations = savedReservations && Array.isArray(savedReservations) ? savedReservations : seedReservations;
+    // Deduplicate by id — stale localStorage may contain collisions from
+    // the old sequential counter that reset on every page reload.
+    const seen = new Set();
+    const deduped = rawReservations.filter((r) => {
+      if (seen.has(r.id)) return false;
+      seen.add(r.id);
+      return true;
+    });
+    setReservationsState(deduped);
+    // Persist the cleaned list so the warning doesn't recur
+    if (deduped.length !== rawReservations.length) {
+      saveToStorage(RESERVATIONS_KEY, deduped);
+    }
 
     const savedFavorites = loadFromStorage(FAVORITES_KEY);
     if (savedFavorites && Array.isArray(savedFavorites)) setFavorites(savedFavorites);
@@ -138,6 +152,7 @@ export function CartProvider({ children }) {
 
   const addReservation = useCallback((reservation) => {
     setReservationsState((prev) => [reservation, ...prev]);
+    setSessionReservations((prev) => [...prev, reservation]);
   }, []);
 
   // ── Favorites actions ──
@@ -174,12 +189,13 @@ export function CartProvider({ children }) {
       allOrders,
       addOrder,
       reservations,
+      sessionReservations,
       addReservation,
       favorites,
       toggleFavorite,
       MAX_ITEM_QTY,
     }),
-    [items, itemCount, subtotal, addItem, removeItem, updateQuantity, clearCart, lastOrder, setLastOrder, allOrders, addOrder, reservations, addReservation, favorites, toggleFavorite]
+    [items, itemCount, subtotal, addItem, removeItem, updateQuantity, clearCart, lastOrder, setLastOrder, allOrders, addOrder, reservations, sessionReservations, addReservation, favorites, toggleFavorite]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

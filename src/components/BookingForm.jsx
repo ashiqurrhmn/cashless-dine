@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { useCart } from "@/context/CartContext";
@@ -8,17 +8,28 @@ import {
   TIME_SLOTS,
   MAX_PARTY_SIZE,
   MIN_PARTY_SIZE,
-  checkAvailability,
-  findAlternativeTimes,
   generateReservationId,
+  TABLES,
+  MOCK_RESERVATIONS,
 } from "@/data/booking";
+import {
+  findAvailableTable,
+  findAlternativeTimes,
+  getOccupiedTableIds,
+  getNowInDhaka,
+  isDateToday,
+  isTimeSlotPassed,
+  REASONS,
+} from "@/lib/booking";
 
 // ─── Helpers ───────────────────────────────────────────────
 
-/** Today in YYYY-MM-DD for the date input min attribute */
+/**
+ * Get today's date in YYYY-MM-DD format, using Asia/Dhaka timezone.
+ * This ensures the date-picker min attribute is correct for Bangladesh.
+ */
 function getTodayISO() {
-  const d = new Date();
-  return d.toISOString().split("T")[0];
+  return getNowInDhaka().dateISO;
 }
 
 /** Format YYYY-MM-DD into a long readable date */
@@ -33,13 +44,13 @@ function formatDateLong(dateStr) {
   });
 }
 
-/** Validate that a date string is not in the past */
+/**
+ * Validate that a date string is not in the past (Asia/Dhaka).
+ * Compares against today in Bangladesh timezone, not the browser's local TZ.
+ */
 function isDateInPast(dateStr) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const [year, month, day] = dateStr.split("-").map(Number);
-  const selected = new Date(year, month - 1, day);
-  return selected < today;
+  const todayStr = getNowInDhaka().dateISO;
+  return dateStr < todayStr;
 }
 
 // ─── Framer Motion Variants ─────────────────────────────────
@@ -62,6 +73,20 @@ const slotVariant = {
   hidden: { opacity: 0, scale: 0.9 },
   visible: { opacity: 1, scale: 1, transition: { duration: 0.3 } },
 };
+
+// ─── Inline Error ───────────────────────────────────────────
+
+function InlineError({ message }) {
+  if (!message) return null;
+  return (
+    <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-2 flex items-center gap-1.5">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+      </svg>
+      {message}
+    </motion.p>
+  );
+}
 
 // ─── Step Indicator ─────────────────────────────────────────
 
@@ -110,7 +135,8 @@ function StepIndicator({ currentStep }) {
 // ─── Main Component ─────────────────────────────────────────
 
 export default function BookingForm() {
-  const { addReservation } = useCart();
+  const { addReservation, sessionReservations } = useCart();
+
   // Form state
   const [date, setDate] = useState("");
   const [partySize, setPartySize] = useState(2);
@@ -124,7 +150,31 @@ export default function BookingForm() {
   // Reservation result
   const [reservation, setReservation] = useState(null);
 
-  const todayISO = useMemo(() => getTodayISO(), []);
+  // ── Dhaka time state (ticks every 30 seconds) ──
+  const getDhakaSnapshot = useCallback(() => getNowInDhaka(), []);
+  const [dhakaTime, setDhakaTime] = useState(getDhakaSnapshot);
+
+  useEffect(() => {
+    // Recalculate every 30s so slot validity stays fresh
+    const timer = setInterval(() => {
+      setDhakaTime(getNowInDhaka());
+    }, 30_000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const todayISO = dhakaTime.dateISO;
+
+  // ── Combined reservations: mock + session ──
+  const allReservations = useMemo(
+    () => [...MOCK_RESERVATIONS, ...sessionReservations],
+    [sessionReservations]
+  );
+
+  // ── Occupied tables for selected time ──
+  const occupiedTables = useMemo(() => {
+    if (!date || !selectedTime) return new Set();
+    return getOccupiedTableIds(date, selectedTime, allReservations);
+  }, [date, selectedTime, allReservations]);
 
   // ── Validation ──
 
@@ -137,8 +187,10 @@ export default function BookingForm() {
       newErrors.date = "Please select a future date.";
     }
 
-    if (partySize < MIN_PARTY_SIZE || partySize > MAX_PARTY_SIZE) {
-      newErrors.partySize = `Party size must be between ${MIN_PARTY_SIZE} and ${MAX_PARTY_SIZE}.`;
+    if (!partySize || partySize < MIN_PARTY_SIZE) {
+      newErrors.partySize = `Please enter the number of guests (at least ${MIN_PARTY_SIZE}).`;
+    } else if (partySize > MAX_PARTY_SIZE) {
+      newErrors.partySize = `We currently accept reservations for up to ${MAX_PARTY_SIZE} guests. Please contact the restaurant for larger groups.`;
     }
 
     setErrors(newErrors);
@@ -178,7 +230,30 @@ export default function BookingForm() {
 
     // Simulate a brief "processing" delay
     setTimeout(() => {
-      const result = checkAvailability(date, selectedTime, partySize);
+      // Re-validate date at submission time (safety net)
+      if (isDateInPast(date)) {
+        setErrors({ booking: "This date is in the past. Please go back and select a future date." });
+        setIsProcessing(false);
+        return;
+      }
+
+      // Re-validate time slot hasn't passed while user was on the page
+      if (isDateToday(date) && isTimeSlotPassed(selectedTime)) {
+        setErrors({ booking: `The ${selectedTime} slot has now passed. Please go back and select a later time.` });
+        setIsProcessing(false);
+        return;
+      }
+
+      // Re-validate party size at submission time (safety net)
+      if (partySize > MAX_PARTY_SIZE) {
+        setErrors({
+          booking: `We currently accept reservations for up to ${MAX_PARTY_SIZE} guests. Please contact the restaurant for larger groups.`,
+        });
+        setIsProcessing(false);
+        return;
+      }
+
+      const result = findAvailableTable(date, selectedTime, partySize, allReservations);
 
       if (result.available) {
         const id = generateReservationId();
@@ -186,7 +261,9 @@ export default function BookingForm() {
           id,
           date,
           time: selectedTime,
+          guests: partySize,
           partySize,
+          tableId: result.table.id,
           tableSize: result.tableSize,
           status: "Confirmed",
         };
@@ -195,9 +272,12 @@ export default function BookingForm() {
         toast.success("Reservation confirmed!");
         setStep(4); // confirmation view
       } else {
-        const alternatives = findAlternativeTimes(date, partySize, selectedTime);
+        const alternatives = findAlternativeTimes(
+          date, partySize, selectedTime, allReservations, TIME_SLOTS
+        );
         setErrors({
           booking: result.message,
+          bookingReason: result.reason,
           alternatives,
         });
       }
@@ -214,23 +294,42 @@ export default function BookingForm() {
     setReservation(null);
   }
 
-  // ── Time slot availability for the UI ──
+  // ── Is the selected date today in Dhaka? ──
+  const selectedDateIsToday = useMemo(
+    () => date && isDateToday(date),
+    [date, dhakaTime]
+  );
+
+  // ── Per-slot time validity (only matters when date is today) ──
+  const timeSlotValidity = useMemo(() => {
+    const validity = {};
+    for (const slot of TIME_SLOTS) {
+      // Future dates: all slots are time-valid
+      // Today: check if the slot has passed in Dhaka
+      validity[slot] = selectedDateIsToday ? !isTimeSlotPassed(slot) : true;
+    }
+    return validity;
+  }, [selectedDateIsToday, dhakaTime]);
+
+  // ── Table availability for the UI (only for time-valid slots) ──
   const timeAvailability = useMemo(() => {
     if (!date) return {};
     const result = {};
     for (const slot of TIME_SLOTS) {
-      result[slot] = checkAvailability(date, slot, partySize);
+      result[slot] = findAvailableTable(date, slot, partySize, allReservations);
     }
     return result;
-  }, [date, partySize]);
+  }, [date, partySize, allReservations]);
 
   // ─── Render ───────────────────────────────────────────────
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-5xl mx-auto">
       <StepIndicator currentStep={step} />
 
-      <AnimatePresence mode="wait">
+      <div className={`flex flex-col ${step < 4 ? "lg:flex-row gap-8" : ""} items-start justify-center`}>
+        <div className={`w-full ${step < 4 ? "lg:w-[55%]" : "max-w-2xl mx-auto"} flex-shrink-0`}>
+          <AnimatePresence mode="wait">
         {/* ═══ STEP 1: Date & Party Size ═══ */}
         {step === 1 && (
           <motion.div
@@ -242,7 +341,7 @@ export default function BookingForm() {
             className="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-2xl p-8 max-md:p-5"
           >
             <h2 className="font-heading text-2xl max-md:text-xl font-bold text-white mb-1">
-              Select Date & Party Size
+              Select Date &amp; Party Size
             </h2>
             <p className="text-white/40 text-sm max-md:text-xs mb-8 max-md:mb-5">
               Choose when you&apos;d like to dine and how many guests to expect.
@@ -266,14 +365,7 @@ export default function BookingForm() {
                   errors.date ? "border-red-500/60" : "border-white/10"
                 }`}
               />
-              {errors.date && (
-                <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-2 flex items-center gap-1.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-                  </svg>
-                  {errors.date}
-                </motion.p>
-              )}
+              <InlineError message={errors.date} />
             </div>
 
             {/* Party size */}
@@ -286,6 +378,7 @@ export default function BookingForm() {
                   type="button"
                   onClick={() => setPartySize(Math.max(MIN_PARTY_SIZE, partySize - 1))}
                   disabled={partySize <= MIN_PARTY_SIZE}
+                  aria-label="Decrease guest count"
                   className="w-11 h-11 max-md:w-9 max-md:h-9 rounded-xl bg-white/5 border border-white/10 text-white text-lg font-bold flex items-center justify-center transition-all duration-200 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   −
@@ -316,19 +409,13 @@ export default function BookingForm() {
                   type="button"
                   onClick={() => setPartySize(Math.min(MAX_PARTY_SIZE, partySize + 1))}
                   disabled={partySize >= MAX_PARTY_SIZE}
+                  aria-label="Increase guest count"
                   className="w-11 h-11 max-md:w-9 max-md:h-9 rounded-xl bg-white/5 border border-white/10 text-white text-lg font-bold flex items-center justify-center transition-all duration-200 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   +
                 </button>
               </div>
-              {errors.partySize && (
-                <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-2 flex items-center gap-1.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-                  </svg>
-                  {errors.partySize}
-                </motion.p>
-              )}
+              <InlineError message={errors.partySize} />
               <p className="text-white/25 text-xs mt-2 max-md:text-[10px]">
                 Maximum {MAX_PARTY_SIZE} guests. For larger parties, please call us directly.
               </p>
@@ -370,7 +457,9 @@ export default function BookingForm() {
               {formatDateLong(date)} · {partySize} {partySize === 1 ? "guest" : "guests"}
             </p>
             <p className="text-white/25 text-xs mb-6 max-md:mb-4 max-md:text-[10px]">
-              Grey slots are fully booked for your party size.
+              {selectedDateIsToday
+                ? "Slots that have already passed are marked and disabled."
+                : "Grey slots are fully booked for your party size."}
             </p>
 
             <motion.div
@@ -380,8 +469,10 @@ export default function BookingForm() {
               className="grid grid-cols-3 max-md:grid-cols-2 gap-3 max-md:gap-2 mb-8 max-md:mb-6"
             >
               {TIME_SLOTS.map((slot) => {
+                const isTimeValid = timeSlotValidity[slot];
                 const avail = timeAvailability[slot];
-                const isAvailable = avail?.available;
+                const isTableAvailable = avail?.available;
+                const isFullyAvailable = isTimeValid && isTableAvailable;
                 const isSelected = selectedTime === slot;
 
                 return (
@@ -389,20 +480,27 @@ export default function BookingForm() {
                     key={slot}
                     variants={slotVariant}
                     type="button"
-                    disabled={!isAvailable}
+                    disabled={!isFullyAvailable}
                     onClick={() => handleTimeSelect(slot)}
                     className={`relative py-3.5 max-md:py-3 rounded-xl text-sm max-md:text-xs font-semibold transition-all duration-300 ${
                       isSelected
                         ? "bg-accent text-white shadow-[0_0_24px_rgba(232,75,43,0.35)] ring-2 ring-accent/50"
-                        : isAvailable
+                        : !isTimeValid
+                        ? "bg-white/[0.02] border border-white/5 text-white/15 cursor-not-allowed line-through decoration-white/10"
+                        : isTableAvailable
                         ? "bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-white/20"
                         : "bg-white/[0.02] border border-white/5 text-white/20 cursor-not-allowed"
                     }`}
                   >
                     {slot}
-                    {!isAvailable && (
+                    {!isTimeValid && (
+                      <span className="block text-[9px] max-md:text-[8px] font-normal text-white/10 mt-0.5">
+                        Passed
+                      </span>
+                    )}
+                    {isTimeValid && !isTableAvailable && (
                       <span className="block text-[9px] max-md:text-[8px] font-normal text-white/15 mt-0.5">
-                        Full
+                        {avail?.reason === REASONS.NO_SUITABLE_TABLE ? "No fit" : "Full"}
                       </span>
                     )}
                   </motion.button>
@@ -411,12 +509,7 @@ export default function BookingForm() {
             </motion.div>
 
             {errors.time && (
-              <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mb-4 flex items-center gap-1.5">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-                {errors.time}
-              </motion.p>
+              <InlineError message={errors.time} />
             )}
 
             <button
@@ -484,11 +577,25 @@ export default function BookingForm() {
                   </svg>
                   {errors.booking}
                 </p>
+
+                {/* Contextual help based on the reason */}
+                {errors.bookingReason === REASONS.NO_SUITABLE_TABLE && (
+                  <p className="text-amber-400/70 text-xs mb-2 max-md:text-[10px]">
+                    Try a different time when a larger table may be free.
+                  </p>
+                )}
+                {errors.bookingReason === REASONS.FULLY_BOOKED && (
+                  <p className="text-amber-400/70 text-xs mb-2 max-md:text-[10px]">
+                    This slot is fully booked. Try another time below.
+                  </p>
+                )}
+
+                {/* Alternative times */}
                 {errors.alternatives && errors.alternatives.length > 0 && (
                   <div>
-                    <p className="text-white/40 text-xs mb-2 max-md:text-[10px]">Try one of these available times:</p>
+                    <p className="text-white/40 text-xs mb-2 max-md:text-[10px]">Available times for {partySize} {partySize === 1 ? "guest" : "guests"} on this date:</p>
                     <div className="flex flex-wrap gap-2">
-                      {errors.alternatives.slice(0, 4).map((alt) => (
+                      {errors.alternatives.slice(0, 5).map((alt) => (
                         <button
                           key={alt}
                           type="button"
@@ -503,6 +610,11 @@ export default function BookingForm() {
                       ))}
                     </div>
                   </div>
+                )}
+                {errors.alternatives && errors.alternatives.length === 0 && (
+                  <p className="text-white/30 text-xs max-md:text-[10px]">
+                    Unfortunately, no alternative times are available for {partySize} {partySize === 1 ? "guest" : "guests"} on this date. Please try a different date.
+                  </p>
                 )}
               </motion.div>
             )}
@@ -616,6 +728,66 @@ export default function BookingForm() {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
+
+      {/* ═══ Table Layout & Availability ═══ */}
+      {step < 4 && (
+        <div className="w-full lg:w-[45%]">
+          <div className="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-2xl p-8 max-md:p-5 animate-fade-in-up-delay-2">
+          <div className="flex items-center justify-between mb-6 max-md:mb-4">
+            <h3 className="font-heading text-xl max-md:text-lg font-bold text-white">
+              Restaurant Layout
+            </h3>
+            <div className="flex items-center gap-3 text-xs max-md:text-[10px] font-medium">
+              <span className="flex items-center gap-1.5 text-white/70">
+                <span className="w-3 h-3 rounded-sm bg-emerald-500/20 border border-emerald-500/30"></span> Available
+              </span>
+              <span className="flex items-center gap-1.5 text-white/70">
+                <span className="w-3 h-3 rounded-sm bg-red-500/20 border border-red-500/30"></span> Booked
+              </span>
+            </div>
+          </div>
+          
+          {!selectedTime && (
+            <p className="text-white/40 text-sm max-md:text-xs mb-6 text-center italic">
+              Select a time slot in the next step to see real-time table availability.
+            </p>
+          )}
+
+          <div className="grid grid-cols-4 max-md:grid-cols-3 gap-4 max-md:gap-3">
+            {TABLES.map((table) => {
+              const isBooked = occupiedTables.has(table.id);
+              const isSuitable = table.capacity >= partySize;
+              
+              return (
+                <div
+                  key={table.id}
+                  className={`relative p-3 max-md:p-2.5 rounded-xl border flex flex-col items-center justify-center transition-all duration-300 ${
+                    !selectedTime
+                      ? "bg-white/5 border-white/10 text-white/70"
+                      : isBooked
+                      ? "bg-red-500/10 border-red-500/20 text-red-300/80"
+                      : "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
+                  } ${!isSuitable && !isBooked && selectedTime ? "opacity-30" : ""}`}
+                >
+                  <span className="text-sm max-md:text-xs font-bold mb-1 tracking-wider">{table.id}</span>
+                  <div className="flex items-center gap-1 opacity-70">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span className="text-[11px] max-md:text-[10px] font-semibold">{table.capacity}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        </div>
+      )}
+      </div>
     </div>
   );
 }
